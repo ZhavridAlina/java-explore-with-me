@@ -13,8 +13,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
@@ -41,6 +43,24 @@ class StatsClientTest {
                 .andRespond(withStatus(org.springframework.http.HttpStatus.CREATED));
 
         statsClient.saveHit(hit);
+
+        mockServer.verify();
+    }
+
+    @Test
+    void saveHitDoesNotThrowWhenStatsServerFails() {
+        EndpointHitDto hit = EndpointHitDto.builder()
+                .app("ewm-main-service")
+                .uri("/events/1")
+                .ip("192.163.0.1")
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        mockServer.expect(requestTo(SERVER_URL + "/hit"))
+                .andExpect(method(org.springframework.http.HttpMethod.POST))
+                .andRespond(withServerError());
+
+        assertThatCode(() -> statsClient.saveHit(hit)).doesNotThrowAnyException();
 
         mockServer.verify();
     }

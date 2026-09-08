@@ -9,6 +9,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.practicum.dto.DateTimeFormat;
@@ -16,6 +17,7 @@ import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.dto.ViewStatsDto;
 
 import java.net.URI;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -31,7 +33,10 @@ public class StatsClient {
 
     public StatsClient(@Value("${stats-server.url}") String serverUrl, RestTemplateBuilder builder) {
         this.serverUrl = serverUrl;
-        this.restTemplate = builder.build();
+        this.restTemplate = builder
+                .setConnectTimeout(Duration.ofSeconds(5))
+                .setReadTimeout(Duration.ofSeconds(5))
+                .build();
     }
 
     public void saveHit(EndpointHitDto endpointHitDto) {
@@ -40,7 +45,11 @@ public class StatsClient {
         HttpEntity<EndpointHitDto> requestEntity = new HttpEntity<>(endpointHitDto, headers);
         URI uri = URI.create(serverUrl + "/hit");
         log.info("Sending hit to stats server: {}", endpointHitDto);
-        restTemplate.exchange(uri, HttpMethod.POST, requestEntity, Void.class);
+        try {
+            restTemplate.exchange(uri, HttpMethod.POST, requestEntity, Void.class);
+        } catch (RestClientException e) {
+            log.warn("Failed to send hit to stats server", e);
+        }
     }
 
     public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {

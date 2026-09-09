@@ -11,6 +11,7 @@ import ru.practicum.category.Category;
 import ru.practicum.category.CategoryService;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
+import ru.practicum.exception.ValidationException;
 import ru.practicum.request.ParticipationRequestRepository;
 import ru.practicum.request.RequestStatus;
 import ru.practicum.user.User;
@@ -98,6 +99,7 @@ public class EventServiceImpl implements EventService {
     public List<EventFullDto> searchEventsAdmin(List<Long> users, List<EventState> states, List<Long> categories,
                                                  LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                                  int from, int size) {
+        validateRange(rangeStart, rangeEnd);
         Specification<Event> spec = Specification.where(null);
         if (users != null && !users.isEmpty()) {
             spec = spec.and(EventSpecifications.hasInitiators(users));
@@ -163,6 +165,7 @@ public class EventServiceImpl implements EventService {
                                                    LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                                    boolean onlyAvailable, EventSort sort, int from, int size,
                                                    HttpServletRequest request) {
+        validateRange(rangeStart, rangeEnd);
         Specification<Event> spec = Specification.where(EventSpecifications.hasState(EventState.PUBLISHED));
         if (text != null && !text.isBlank()) {
             spec = spec.and(EventSpecifications.textSearch(text));
@@ -233,6 +236,12 @@ public class EventServiceImpl implements EventService {
     public Event getEventOrThrow(Long eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
+    }
+
+    private void validateRange(LocalDateTime rangeStart, LocalDateTime rangeEnd) {
+        if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
+            throw new ValidationException("Range start must not be after range end");
+        }
     }
 
     private void applyCommonFields(Event event, String annotation, Long categoryId, String description,

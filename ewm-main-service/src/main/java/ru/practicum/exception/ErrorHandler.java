@@ -31,6 +31,12 @@ public class ErrorHandler {
         return build(HttpStatus.NOT_FOUND, REASON_NOT_FOUND, e.getMessage());
     }
 
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ApiError> handleValidation(ValidationException e) {
+        log.warn("Validation error: {}", e.getMessage());
+        return build(HttpStatus.BAD_REQUEST, REASON_BAD_REQUEST, e.getMessage());
+    }
+
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiError> handleConflict(ConflictException e) {
         log.warn("Conflict: {}", e.getMessage());

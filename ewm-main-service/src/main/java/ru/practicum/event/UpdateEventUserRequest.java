@@ -1,6 +1,8 @@
 package ru.practicum.event;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,6 +24,7 @@ public class UpdateEventUserRequest {
     @Size(min = 20, max = 7000)
     private String description;
 
+    @Future
     @JsonFormat(pattern = DateTimeFormat.PATTERN)
     private LocalDateTime eventDate;
 
@@ -29,6 +32,7 @@ public class UpdateEventUserRequest {
 
     private Boolean paid;
 
+    @PositiveOrZero
     private Integer participantLimit;
 
     private Boolean requestModeration;

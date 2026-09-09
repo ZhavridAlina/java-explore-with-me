@@ -193,6 +193,72 @@ class EwmMainServiceIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Event date must be at least 2 hours from now"));
     }
 
+    @Test
+    void negativeParticipantLimitIsRejected() throws Exception {
+        UserDto initiator = createUser("Игорь Волков", "igor" + System.nanoTime() + "@mail.ru");
+        CategoryDto category = createCategory("Театр" + System.nanoTime());
+
+        NewEventDto negativeLimit = new NewEventDto();
+        negativeLimit.setTitle("Вечерний спектакль");
+        negativeLimit.setAnnotation("Классический спектакль по мотивам известной пьесы для взрослой аудитории");
+        negativeLimit.setDescription("Классический спектакль по мотивам известной пьесы для взрослой аудитории театра");
+        negativeLimit.setCategory(category.getId());
+        negativeLimit.setEventDate(LocalDateTime.now().plusHours(5));
+        negativeLimit.setLocation(new Location(1f, 1f));
+        negativeLimit.setParticipantLimit(-1);
+
+        mockMvc.perform(post("/users/{userId}/events", initiator.getId())
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(negativeLimit)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void adminUpdateValidatesFieldLengths() throws Exception {
+        UserDto initiator = createUser("Светлана Попова", "svetlana" + System.nanoTime() + "@mail.ru");
+        CategoryDto category = createCategory("Выставки" + System.nanoTime());
+
+        NewEventDto newEvent = new NewEventDto();
+        newEvent.setTitle("Выставка современного искусства");
+        newEvent.setAnnotation("Большая выставка современного искусства с работами молодых художников города");
+        newEvent.setDescription("Большая выставка современного искусства с работами молодых художников города и области");
+        newEvent.setCategory(category.getId());
+        newEvent.setEventDate(LocalDateTime.now().plusHours(5));
+        newEvent.setLocation(new Location(1f, 1f));
+
+        MvcResult createResult = mockMvc.perform(post("/users/{userId}/events", initiator.getId())
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(newEvent)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        EventFullDto created = readDto(createResult, EventFullDto.class);
+
+        UpdateEventAdminRequest shortTitle = new UpdateEventAdminRequest();
+        shortTitle.setTitle("ab");
+        mockMvc.perform(patch("/admin/events/{eventId}", created.getId())
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(shortTitle)))
+                .andExpect(status().isBadRequest());
+
+        UpdateEventAdminRequest pastDate = new UpdateEventAdminRequest();
+        pastDate.setEventDate(LocalDateTime.now().minusDays(1));
+        mockMvc.perform(patch("/admin/events/{eventId}", created.getId())
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(pastDate)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void invalidDateRangeIsRejected() throws Exception {
+        LocalDateTime start = LocalDateTime.now().plusDays(2);
+        LocalDateTime end = LocalDateTime.now().plusDays(1);
+
+        mockMvc.perform(get("/events")
+                        .param("rangeStart", start.format(FORMATTER))
+                        .param("rangeEnd", end.format(FORMATTER)))
+                .andExpect(status().isBadRequest());
+    }
+
     private UserDto createUser(String name, String email) throws Exception {
         NewUserRequest request = new NewUserRequest(email, name);
         MvcResult result = mockMvc.perform(post("/admin/users")

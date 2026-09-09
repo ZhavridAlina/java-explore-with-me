@@ -42,6 +42,9 @@ public class StatsController {
                                         @RequestParam(defaultValue = "false") boolean unique) {
         LocalDateTime startDate = LocalDateTime.parse(start, FORMATTER);
         LocalDateTime endDate = LocalDateTime.parse(end, FORMATTER);
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Range start must not be after range end");
+        }
         log.info("Getting stats from {} to {}, uris={}, unique={}", startDate, endDate, uris, unique);
         return statsService.getStats(startDate, endDate, uris, unique);
     }

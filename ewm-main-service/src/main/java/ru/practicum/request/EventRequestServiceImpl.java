@@ -80,7 +80,8 @@ public class EventRequestServiceImpl implements EventRequestService {
     public List<ParticipationRequestDto> getEventParticipants(Long userId, Long eventId) {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
-        return requestRepository.findByEventId(event.getId()).stream().map(RequestMapper::toDto).toList();
+        return requestRepository.findByEventIdWithEventAndRequester(event.getId()).stream()
+                .map(RequestMapper::toDto).toList();
     }
 
     @Override

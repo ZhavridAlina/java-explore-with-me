@@ -13,6 +13,10 @@ public interface ParticipationRequestRepository extends JpaRepository<Participat
 
     List<ParticipationRequest> findByEventId(Long eventId);
 
+    @Query("select r from ParticipationRequest r "
+            + "join fetch r.event join fetch r.requester where r.event.id = :eventId")
+    List<ParticipationRequest> findByEventIdWithEventAndRequester(@Param("eventId") Long eventId);
+
     List<ParticipationRequest> findByIdInAndEventId(List<Long> ids, Long eventId);
 
     Optional<ParticipationRequest> findByIdAndRequesterId(Long id, Long requesterId);

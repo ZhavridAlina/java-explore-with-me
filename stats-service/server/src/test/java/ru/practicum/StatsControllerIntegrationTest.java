@@ -79,4 +79,15 @@ class StatsControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].hits").value(2));
     }
+
+    @Test
+    void getStatsWithStartAfterEndReturnsBadRequest() throws Exception {
+        String start = LocalDateTime.now().plusHours(1).format(FORMATTER);
+        String end = LocalDateTime.now().minusHours(1).format(FORMATTER);
+
+        mockMvc.perform(get("/stats")
+                        .param("start", start)
+                        .param("end", end))
+                .andExpect(status().isBadRequest());
+    }
 }

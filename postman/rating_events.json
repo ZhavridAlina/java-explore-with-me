@@ -1,0 +1,551 @@
+{
+  "info": {
+    "name": "ExploreWithMe :: rating_events",
+    "description": "Basic tests for the rating_events feature (likes/dislikes and event rating).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "initiatorId", "value": "" },
+    { "key": "attendeeId", "value": "" },
+    { "key": "attendee2Id", "value": "" },
+    { "key": "strangerId", "value": "" },
+    { "key": "categoryId", "value": "" },
+    { "key": "eventId", "value": "" },
+    { "key": "event2Id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "0. Setup",
+      "item": [
+        {
+          "name": "Create initiator",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/admin/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rating Initiator\",\n  \"email\": \"rating.initiator.{{$timestamp}}@mail.ru\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.collectionVariables.set('initiatorId', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create attendee",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/admin/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rating Attendee\",\n  \"email\": \"rating.attendee.{{$timestamp}}@mail.ru\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.collectionVariables.set('attendeeId', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create second attendee",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/admin/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rating Attendee 2\",\n  \"email\": \"rating.attendee2.{{$timestamp}}@mail.ru\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.collectionVariables.set('attendee2Id', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create stranger",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/admin/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rating Stranger\",\n  \"email\": \"rating.stranger.{{$timestamp}}@mail.ru\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.collectionVariables.set('strangerId', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/admin/categories",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rating category {{$timestamp}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.collectionVariables.set('categoryId', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users/{{initiatorId}}/events",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Rating test event\",\n  \"annotation\": \"An event created only to exercise the like and dislike endpoints\",\n  \"description\": \"An event created only to exercise the like, dislike and rating endpoints end to end\",\n  \"category\": {{categoryId}},\n  \"eventDate\": \"2030-01-01 12:00:00\",\n  \"location\": { \"lat\": 55.75, \"lon\": 37.61 },\n  \"paid\": false,\n  \"participantLimit\": 0,\n  \"requestModeration\": false\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.test('state is PENDING', function () { pm.expect(body.state).to.eql('PENDING'); });",
+                  "pm.collectionVariables.set('eventId', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Publish event",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/admin/events/{{eventId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stateAction\": \"PUBLISH_EVENT\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('state is PUBLISHED', function () { pm.expect(body.state).to.eql('PUBLISHED'); });",
+                  "pm.test('initial rating is 0', function () { pm.expect(body.rating).to.eql(0); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Validation",
+      "item": [
+        {
+          "name": "Stranger cannot like (no confirmed request) -> 409",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/users/{{strangerId}}/events/{{eventId}}/rating/like"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 409', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attendee submits a participation request",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/users/{{attendeeId}}/requests?eventId={{eventId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.test('request is auto-confirmed', function () { pm.expect(body.status).to.eql('CONFIRMED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Initiator cannot rate own event -> 409",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/users/{{initiatorId}}/events/{{eventId}}/rating/like"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 409', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Like / dislike lifecycle",
+      "item": [
+        {
+          "name": "Attendee likes the event",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/users/{{attendeeId}}/events/{{eventId}}/rating/like"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('likes is 1', function () { pm.expect(body.likes).to.eql(1); });",
+                  "pm.test('dislikes is 0', function () { pm.expect(body.dislikes).to.eql(0); });",
+                  "pm.test('rating is 1', function () { pm.expect(body.rating).to.eql(1); });",
+                  "pm.test('myVote is true', function () { pm.expect(body.myVote).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public event card shows the rating",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/events/{{eventId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('likes is 1', function () { pm.expect(body.likes).to.eql(1); });",
+                  "pm.test('rating is 1', function () { pm.expect(body.rating).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attendee switches to dislike",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/users/{{attendeeId}}/events/{{eventId}}/rating/dislike"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('likes is 0', function () { pm.expect(body.likes).to.eql(0); });",
+                  "pm.test('dislikes is 1', function () { pm.expect(body.dislikes).to.eql(1); });",
+                  "pm.test('rating is -1', function () { pm.expect(body.rating).to.eql(-1); });",
+                  "pm.test('myVote is false', function () { pm.expect(body.myVote).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attendee reads their own rating",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/{{attendeeId}}/events/{{eventId}}/rating"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('myVote is false', function () { pm.expect(body.myVote).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attendee retracts the vote",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/users/{{attendeeId}}/events/{{eventId}}/rating"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('rating is back to 0', function () { pm.expect(body.rating).to.eql(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Retracting a missing vote -> 404",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/users/{{attendeeId}}/events/{{eventId}}/rating"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 404', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Admin moderation",
+      "item": [
+        {
+          "name": "Attendee likes the event again",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/users/{{attendeeId}}/events/{{eventId}}/rating/like"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('rating is 1', function () { pm.expect(body.rating).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin removes the vote",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/admin/events/{{eventId}}/rating/users/{{attendeeId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rating is back to 0 after moderation",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/events/{{eventId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('rating is 0', function () { pm.expect(body.rating).to.eql(0); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Sorting by rating",
+      "item": [
+        {
+          "name": "Create second event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users/{{initiatorId}}/events",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Rating test event 2\",\n  \"annotation\": \"A second event that stays at rating zero for comparison\",\n  \"description\": \"A second event that stays at rating zero to compare sorting order in the search endpoint\",\n  \"category\": {{categoryId}},\n  \"eventDate\": \"2030-01-01 12:00:00\",\n  \"location\": { \"lat\": 55.75, \"lon\": 37.61 },\n  \"paid\": false,\n  \"participantLimit\": 0,\n  \"requestModeration\": false\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.collectionVariables.set('event2Id', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Publish second event",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/admin/events/{{event2Id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stateAction\": \"PUBLISH_EVENT\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Second attendee joins the first event",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/users/{{attendee2Id}}/requests?eventId={{eventId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Second attendee likes the first event",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/users/{{attendee2Id}}/events/{{eventId}}/rating/like"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('rating is 1', function () { pm.expect(body.rating).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search sorted by rating puts the liked event first",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events?categories={{categoryId}}&sort=RATING",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"],
+              "query": [
+                { "key": "categories", "value": "{{categoryId}}" },
+                { "key": "sort", "value": "RATING" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('liked event is first', function () { pm.expect(body[0].id).to.eql(pm.collectionVariables.get('eventId')); });",
+                  "pm.test('liked event has rating 1', function () { pm.expect(body[0].rating).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

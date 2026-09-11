@@ -82,4 +82,13 @@ public class Event {
 
     @Column(name = "event_date", nullable = false)
     private LocalDateTime eventDate;
+
+    @Column(name = "likes_count", nullable = false)
+    private int likesCount;
+
+    @Column(name = "dislikes_count", nullable = false)
+    private int dislikesCount;
+
+    @Column(nullable = false)
+    private int rating;
 }

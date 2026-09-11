@@ -208,8 +208,10 @@ public class EventServiceImpl implements EventService {
             int toIdx = Math.min(from + size, sorted.size());
             pageEvents = sorted.subList(fromIdx, toIdx);
         } else {
-            Page<Event> page = eventRepository.findAll(spec,
-                    OffsetPageRequest.of(from, size, Sort.by(Sort.Direction.ASC, "eventDate")));
+            Sort sortOrder = sort == EventSort.RATING
+                    ? Sort.by(Sort.Direction.DESC, "rating")
+                    : Sort.by(Sort.Direction.ASC, "eventDate");
+            Page<Event> page = eventRepository.findAll(spec, OffsetPageRequest.of(from, size, sortOrder));
             pageEvents = page.getContent();
             views = eventViewsService.recordHitAndGetViews(request, pageEvents.stream().map(Event::getId).toList());
         }

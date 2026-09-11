@@ -47,6 +47,9 @@ public final class EventMapper {
                 .eventDate(event.getEventDate())
                 .confirmedRequests(confirmedRequests)
                 .views(views)
+                .likes(event.getLikesCount())
+                .dislikes(event.getDislikesCount())
+                .rating(event.getRating())
                 .build();
     }
 
@@ -61,6 +64,9 @@ public final class EventMapper {
                 .eventDate(event.getEventDate())
                 .confirmedRequests(confirmedRequests)
                 .views(views)
+                .likes(event.getLikesCount())
+                .dislikes(event.getDislikesCount())
+                .rating(event.getRating())
                 .build();
     }
 }

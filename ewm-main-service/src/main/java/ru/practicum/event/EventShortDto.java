@@ -35,4 +35,10 @@ public class EventShortDto {
     private long confirmedRequests;
 
     private long views;
+
+    private int likes;
+
+    private int dislikes;
+
+    private int rating;
 }

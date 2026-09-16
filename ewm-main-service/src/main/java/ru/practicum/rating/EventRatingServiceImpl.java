@@ -52,22 +52,22 @@ public class EventRatingServiceImpl implements EventRatingService {
     @Transactional
     public EventRatingDto removeVote(Long userId, Long eventId) {
         userService.getUserOrThrow(userId);
-        Event event = getEventOrThrow(eventId);
+        getEventOrThrow(eventId);
         EventLike vote = eventLikeRepository.findByEventIdAndUserId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException(
                         "Rating from user with id=" + userId + " for event with id=" + eventId + " was not found"));
-        applyRemoval(event, vote);
-        return toDto(event, null);
+        applyRemoval(eventId, vote);
+        return toDto(getEventOrThrow(eventId), null);
     }
 
     @Override
     @Transactional
     public void removeVoteAdmin(Long eventId, Long userId) {
-        Event event = getEventOrThrow(eventId);
+        getEventOrThrow(eventId);
         EventLike vote = eventLikeRepository.findByEventIdAndUserId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException(
                         "Rating from user with id=" + userId + " for event with id=" + eventId + " was not found"));
-        applyRemoval(event, vote);
+        applyRemoval(eventId, vote);
     }
 
     private EventRatingDto vote(Long userId, Long eventId, boolean isLike) {
@@ -88,43 +88,25 @@ public class EventRatingServiceImpl implements EventRatingService {
         if (existing.isPresent()) {
             EventLike existingVote = existing.get();
             if (existingVote.isLike() != isLike) {
-                if (isLike) {
-                    event.setLikesCount(event.getLikesCount() + 1);
-                    event.setDislikesCount(event.getDislikesCount() - 1);
-                } else {
-                    event.setLikesCount(event.getLikesCount() - 1);
-                    event.setDislikesCount(event.getDislikesCount() + 1);
-                }
                 existingVote.setLike(isLike);
                 eventLikeRepository.save(existingVote);
+                eventRepository.adjustRatingCounts(eventId, isLike ? 1 : -1, isLike ? -1 : 1);
             }
         } else {
-            if (isLike) {
-                event.setLikesCount(event.getLikesCount() + 1);
-            } else {
-                event.setDislikesCount(event.getDislikesCount() + 1);
-            }
             eventLikeRepository.save(EventLike.builder()
                     .event(event)
                     .user(user)
                     .like(isLike)
                     .created(LocalDateTime.now())
                     .build());
+            eventRepository.adjustRatingCounts(eventId, isLike ? 1 : 0, isLike ? 0 : 1);
         }
-        event.setRating(event.getLikesCount() - event.getDislikesCount());
-        eventRepository.save(event);
-        return toDto(event, isLike);
+        return toDto(getEventOrThrow(eventId), isLike);
     }
 
-    private void applyRemoval(Event event, EventLike vote) {
-        if (vote.isLike()) {
-            event.setLikesCount(event.getLikesCount() - 1);
-        } else {
-            event.setDislikesCount(event.getDislikesCount() - 1);
-        }
-        event.setRating(event.getLikesCount() - event.getDislikesCount());
+    private void applyRemoval(Long eventId, EventLike vote) {
         eventLikeRepository.delete(vote);
-        eventRepository.save(event);
+        eventRepository.adjustRatingCounts(eventId, vote.isLike() ? -1 : 0, vote.isLike() ? 0 : -1);
     }
 
     private Event getEventOrThrow(Long eventId) {
